@@ -72,7 +72,7 @@ void packetHandler(
     	struct iphdr * ip_header = (struct iphdr *) (packet + sizeof(struct ether_header));
     	//We only need the src ip
     	//no need to parse the tcp header in advance
-    	printf("%s\n", inet_ntoa(ip_header->src));
+    	printf("%s\n", inet_ntoa(ip_header->saddr));
     }
 }
 
