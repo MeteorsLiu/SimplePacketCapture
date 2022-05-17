@@ -3,8 +3,11 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pcap/pcap.h>
+#include <signal.h>
 #include <linux/if_ether.h>
+#include <netinet/ip.h>
 #include <netinet/in.h>
+#include <netinet/if_ether.h>
 #include <arpa/inet.h> 
 
 //Global
@@ -69,10 +72,10 @@ void packetHandler(
     //Only IP Packet
     if (ntohs(eth_header->ether_type) == ETHERTYPE_IP) {
     	//Get IP Header
-    	struct iphdr * ip_header = (struct iphdr *) (packet + sizeof(struct ether_header));
+    	struct ip * ip_header = (struct ip *) (packet + sizeof(struct ether_header));
     	//We only need the src ip
     	//no need to parse the tcp header in advance
-    	printf("%s\n", inet_ntoa(ip_header->saddr));
+    	printf("%s\n", inet_ntoa(ip_header->ip_src));
     }
 }
 
