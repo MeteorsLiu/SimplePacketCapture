@@ -9,15 +9,18 @@
 #include <netinet/in.h>
 #include <netinet/if_ether.h>
 #include <arpa/inet.h> 
-
+#include <time.h>
 //Global
 static pcap_t *p = NULL;
+static unsigned long bytes = 0;
+static time_t record = 0;
 #define ERROR -1
 
 void stop_capture(int o) {
 	printf("Exit");
 	pcap_close(p);
 	p = NULL;
+	exit(1);
 }
 
 int create_pcap_handle(char* device, char* filter)
@@ -75,7 +78,16 @@ void packetHandler(
     	struct ip * ip_header = (struct ip *) (packet + sizeof(struct ether_header));
     	//We only need the src ip
     	//no need to parse the tcp header in advance
-    	printf("%s\n", inet_ntoa(ip_header->ip_src));
+    	time_t seconds = time(NULL);
+    	if (seconds - record >= 1) {
+    		//Reset Counter
+    		bytes /= 131072;
+    		printf("record: %d %s  %lu\n", record, inet_ntoa(ip_header->ip_src), bytes);
+    		record = seconds;
+    		bytes = 0;
+    	}
+    	bytes += (ip_header->ip_len - (ip_header->ip_hl*4));
+    	//printf("ip len : %d\n", ip_header->ip_len);
     }
 }
 
