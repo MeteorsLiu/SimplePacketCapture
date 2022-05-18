@@ -86,7 +86,7 @@ void packetHandler(
     		record = seconds;
     		bytes = 0;
     	}
-    	bytes += (ip_header->ip_len - (ip_header->ip_hl*4));
+    	bytes += header->len;
     	//printf("ip len : %d\n", ip_header->ip_len);
     }
 }
