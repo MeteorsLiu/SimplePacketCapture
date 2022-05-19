@@ -27,11 +27,10 @@ static List Last = NULL;
 
 
 void Create(uint32_t Key, bpf_u_int32 bytes) {
-	time_t record = time(NULL);
 	Head = Last = (List) malloc(sizeof(struct LinkedList));
 	Head->Key = Key;
 	Head->bytes = bytes;
-	Head->record = record;
+	Head->record = time(NULL);
 	Head->next = NULL;
 }
 void Insert(uint32_t Key, bpf_u_int32 bytes) {
