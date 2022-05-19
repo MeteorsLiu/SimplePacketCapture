@@ -21,3 +21,8 @@
 `tcp port 1234`
 
 则记录所有经过1234端口的IP速度
+
+## 效果图
+
+![效果图](https://github.com/MeteorsLiu/SimplePacketCapture/raw/main/imgs/image6-1.png)
+
