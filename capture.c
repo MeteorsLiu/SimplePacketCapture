@@ -34,12 +34,12 @@ void Create(uint32_t Key, bpf_u_int32 bytes) {
 	Head->record = record;
 	Head->next = NULL;
 }
-void Insert(uint32_t Key, bpf_u_int32 bytes, time_t record) {
+void Insert(uint32_t Key, bpf_u_int32 bytes) {
 	List indirect = NULL;
 	indirect = Last->next = (List) malloc(sizeof(struct LinkedList));
 	indirect->Key = Key;
-	Head->bytes = bytes;
-	indirect->record = record;
+	indirect->bytes = bytes;
+	indirect->record = time(NULL);
 	indirect->next = NULL;
 	Last = indirect;
 }
@@ -69,7 +69,7 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 		indirect = indirect->next;
 	}
 	if (!flag)
-		Insert(Key, bytes, time(NULL));
+		Insert(Key, bytes);
 
 	return 0;
 }
