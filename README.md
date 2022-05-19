@@ -4,6 +4,8 @@
 
 它可以统计经过指定规则的IP速率
 
+它精简短小，尽可能减少代码冗余，而且cBPF会被翻译成eBPF，过滤效率极高
+
 ## 编译
 
 `gcc capture.c -o capture -lpcap`
