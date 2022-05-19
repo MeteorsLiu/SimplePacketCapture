@@ -8,7 +8,7 @@
 
 ## 编译
 
-`gcc capture.c -o capture -lpcap`
+`gcc capture.c -o capture -lpcap -O2`
 
 ## 使用
 
