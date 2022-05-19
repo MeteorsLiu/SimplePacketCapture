@@ -1,5 +1,5 @@
 #include <stdio.h>
-#include <string.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pcap/pcap.h>
@@ -11,15 +11,85 @@
 #include <arpa/inet.h> 
 #include <time.h>
 //Global
+
+typedef struct LinkedList * List;
+struct LinkedList
+{
+	uint32_t Key;
+	bpf_u_int32 bytes;
+	time_t record;
+	List   next;
+};
 static pcap_t *p = NULL;
-static unsigned long bytes = 0;
-static time_t record = 0;
+static List Head = NULL;
+static List Last = NULL;
 #define ERROR -1
 
+
+void Create(uint32_t Key, bpf_u_int32 bytes) {
+	time_t record = time(NULL);
+	Head = Last = (List) malloc(sizeof(struct LinkedList));
+	Head->Key = Key;
+	Head->bytes = bytes;
+	Head->record = record;
+	Head->next = NULL;
+}
+void Insert(uint32_t Key, bpf_u_int32 bytes, time_t record) {
+	List indirect = NULL;
+	indirect = Last->next = (List) malloc(sizeof(struct LinkedList));
+	indirect->Key = Key;
+	Head->bytes = bytes;
+	indirect->record = record;
+	indirect->next = NULL;
+	Last = indirect;
+}
+
+bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
+	List indirect = Head;
+	bpf_u_int32 rate = 0;
+	int flag = 0;
+	time_t record;
+	while (indirect) {
+		//Matched !
+		if (indirect->Key == Key) {
+			flag = 1;
+			record = time(NULL);
+			if (record - indirect->record >= 1) {
+				//Reset Counter
+				indirect->record = record;
+				rate = indirect->bytes;
+				indirect->bytes = 0;
+				return rate;
+			} else {
+				indirect->bytes += bytes;
+				break;
+			}
+
+		}
+		indirect = indirect->next;
+	}
+	if (!flag)
+		Insert(Key, bytes, time(NULL));
+
+	return 0;
+}
+
+void Free() {
+	List indirect = Head;
+	List tmp = NULL;
+	while (indirect) {
+		tmp = indirect->next;
+		free(indirect);
+		indirect = tmp;
+	}
+	Head = Last = NULL;
+}
 void stop_capture(int o) {
-	printf("Exit");
+	printf("Exit\n");
 	pcap_close(p);
 	p = NULL;
+	Free();
+	printf("Resource clear\n");
 	exit(1);
 }
 
@@ -71,22 +141,30 @@ void packetHandler(
     const u_char* packet
 ) {
     struct ether_header *eth_header;
+    bpf_u_int32 rate = 0;
     eth_header = (struct ether_header *) packet;
     //Only IP Packet
     if (ntohs(eth_header->ether_type) == ETHERTYPE_IP) {
     	//Get IP Header
-    	struct ip * ip_header = (struct ip *) (packet + sizeof(struct ether_header));
     	//We only need the src ip
     	//no need to parse the tcp header in advance
-    	time_t seconds = time(NULL);
-    	if (seconds - record >= 1) {
-    		//Reset Counter
-    		bytes /= 131072;
-    		printf("record: %d %s  %lu\n", record, inet_ntoa(ip_header->ip_src), bytes);
-    		record = seconds;
-    		bytes = 0;
+    	struct ip * ip_header = (struct ip *) (packet + sizeof(struct ether_header));
+    	//Create Linked List
+    	if (!Head) {
+    		Create((ip_header->ip_src).s_addr, header->len);
+    		return;
     	}
-    	bytes += header->len;
+    	rate = Update((ip_header->ip_src).s_addr, header->len);
+    	if (rate > 0) {
+    		if (rate >= 131072) {
+    			rate /= 131072;
+    			printf("record:  %s  %luMbps\n", inet_ntoa(ip_header->ip_src), rate);
+    		} else {
+    			rate /= 128;
+    			printf("record:  %s  %luKbps\n", inet_ntoa(ip_header->ip_src), rate);
+    		}
+    		
+    	}
     	//printf("ip len : %d\n", ip_header->ip_len);
     }
 }
