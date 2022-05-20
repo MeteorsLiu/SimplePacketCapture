@@ -16,13 +16,16 @@ typedef struct LinkedList * List;
 struct LinkedList
 {
 	uint32_t Key;
+	uint64_t usedTime;
 	bpf_u_int32 bytes;
 	time_t record;
+	List   prev;
 	List   next;
 };
 static pcap_t *p = NULL;
 static List Head = NULL;
 static List Last = NULL;
+static uint64_t maxTimes = 0;
 #define ERROR -1
 
 
@@ -31,7 +34,8 @@ void Create(uint32_t Key, bpf_u_int32 bytes) {
 	Head->Key = Key;
 	Head->bytes = bytes;
 	Head->record = time(NULL);
-	Head->next = NULL;
+	Head->prev = Head->next = NULL;
+	Head->usedTime = 0;
 }
 void Insert(uint32_t Key, bpf_u_int32 bytes) {
 	List indirect = NULL;
@@ -39,8 +43,26 @@ void Insert(uint32_t Key, bpf_u_int32 bytes) {
 	indirect->Key = Key;
 	indirect->bytes = bytes;
 	indirect->record = time(NULL);
+	indirect->prev = Last;
 	indirect->next = NULL;
+	indirect->usedTime = 0;
 	Last = indirect;
+}
+
+void Adjust(List Node) {
+	//Head Node will not be adjusted
+	if (Node->prev == NULL && Head == Node)
+		return;
+	//printf("%d Adjust to be Top!\n", Node->Key);
+	//Make it be first
+	//First connected the previous node with the next node
+	Node->prev->next = Node->next;
+	//Update the new next ptr
+	Node->next = Head;
+	//Update the head prev ptr
+	Head->prev = Node;
+	Node->prev = NULL;
+	Head = Node;
 }
 
 bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
@@ -58,12 +80,17 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 				indirect->record = record;
 				rate = indirect->bytes;
 				indirect->bytes = 0;
+				indirect->usedTime++;
+				if (indirect->usedTime > maxTimes) {
+					maxTimes = indirect->usedTime;
+					Adjust(indirect);
+					//printf("%d is the Head Node\n", Head->Key);
+				}
 				return rate;
 			} else {
 				indirect->bytes += bytes;
 				break;
 			}
-
 		}
 		indirect = indirect->next;
 	}
@@ -78,6 +105,7 @@ void Free() {
 	List tmp = NULL;
 	while (indirect) {
 		tmp = indirect->next;
+		//printf("Free %d\n", indirect->Key);
 		free(indirect);
 		indirect = tmp;
 	}
