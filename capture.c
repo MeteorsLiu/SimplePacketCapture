@@ -15,7 +15,7 @@ typedef struct LinkedList * List;
 struct LinkedList
 {
 	uint32_t Key;
-	uint64_t usedTime;
+	uint32_t usedTime;
 	bpf_u_int32 bytes;
 	time_t record;
 	List   prev;
@@ -24,8 +24,7 @@ struct LinkedList
 static pcap_t *p = NULL;
 static List Head = NULL;
 static List Last = NULL;
-static uint64_t maxTimes = 0;
-static time_t lastUpdate = 0;
+static uint32_t maxTimes = 0;
 
 //Macro
 #define ERROR -1
@@ -71,23 +70,11 @@ void Adjust(List Node) {
 	Head = Node;
 }
 
-void ResetAllCounter() {
-	List indirect = Head;
-	while (indirect) {
-		indirect->usedTime = 0;
-		indirect = indirect->next;
-	}
-	maxTimes = 0;
-	lastUpdate = time(NULL);
-}
 bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 	List indirect = Head;
 	bpf_u_int32 rate = 0;
 	int flag = 0;
 	time_t record;
-	if (lastUpdate == 0)
-		lastUpdate = time(NULL);
-
 	while (indirect) {
 		//Matched !
 		if (indirect->Key == Key) {
@@ -102,10 +89,9 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 				if (indirect->usedTime > maxTimes) {
 					maxTimes = indirect->usedTime;
 					Adjust(indirect);
+					indirect->usedTime = 0;
 					//printf("%d is the Head Node\n", Head->Key);
 				}
-				if (record - lastUpdate >= DAY) 
-					ResetAllCounter();
 				return rate;
 			} else {
 				indirect->bytes += bytes;
