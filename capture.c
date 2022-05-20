@@ -28,7 +28,6 @@ static uint32_t maxTimes = 0;
 
 //Macro
 #define ERROR -1
-#define DAY 86400
 #define SECOND 1
 #define MiB    131072
 #define KiB	   128
@@ -87,7 +86,8 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 				indirect->bytes = 0;
 				indirect->usedTime++;
 				if (indirect->usedTime > maxTimes) {
-					maxTimes = indirect->usedTime;
+					//Double the time, making it fixed at the top node
+					maxTimes = indirect->usedTime * 2;
 					Adjust(indirect);
 					indirect->usedTime = 0;
 					//printf("%d is the Head Node\n", Head->Key);
