@@ -10,8 +10,7 @@
 #include <netinet/if_ether.h>
 #include <arpa/inet.h> 
 #include <time.h>
-//Global
-
+//Global Var
 typedef struct LinkedList * List;
 struct LinkedList
 {
@@ -26,7 +25,14 @@ static pcap_t *p = NULL;
 static List Head = NULL;
 static List Last = NULL;
 static uint64_t maxTimes = 0;
+static time_t lastUpdate = 0;
+
+//Macro
 #define ERROR -1
+#define DAY 86400
+#define SECOND 1
+#define MiB    131072
+#define KiB	   128
 
 
 void Create(uint32_t Key, bpf_u_int32 bytes) {
@@ -65,17 +71,29 @@ void Adjust(List Node) {
 	Head = Node;
 }
 
+void ResetAllCounter() {
+	List indirect = Head;
+	while (indirect) {
+		indirect->usedTime = 0;
+		indirect = indirect->next;
+	}
+	maxTimes = 0;
+	lastUpdate = time(NULL);
+}
 bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 	List indirect = Head;
 	bpf_u_int32 rate = 0;
 	int flag = 0;
 	time_t record;
+	if (lastUpdate == 0)
+		lastUpdate = time(NULL);
+
 	while (indirect) {
 		//Matched !
 		if (indirect->Key == Key) {
 			flag = 1;
 			record = time(NULL);
-			if (record - indirect->record >= 1) {
+			if (record - indirect->record >= SECOND) {
 				//Reset Counter
 				indirect->record = record;
 				rate = indirect->bytes;
@@ -86,6 +104,8 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 					Adjust(indirect);
 					//printf("%d is the Head Node\n", Head->Key);
 				}
+				if (record - lastUpdate >= DAY) 
+					ResetAllCounter();
 				return rate;
 			} else {
 				indirect->bytes += bytes;
@@ -183,11 +203,11 @@ void packetHandler(
     	}
     	rate = Update((ip_header->ip_src).s_addr, header->len);
     	if (rate > 0) {
-    		if (rate >= 131072) {
-    			rate /= 131072;
+    		if (rate >= MiB) {
+    			rate /= MiB;
     			printf("record:  %s  %luMbps\n", inet_ntoa(ip_header->ip_src), rate);
     		} else {
-    			rate /= 128;
+    			rate /= KiB;
     			printf("record:  %s  %luKbps\n", inet_ntoa(ip_header->ip_src), rate);
     		}
     		
