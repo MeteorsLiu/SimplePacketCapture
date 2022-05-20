@@ -54,6 +54,9 @@ void Insert(uint32_t Key, bpf_u_int32 bytes) {
 }
 
 void Adjust(List Node) {
+	//Double the time, making it fixed at the top node
+	//And prevent the head node call this function too many times
+	maxTimes = Node->usedTime * 2;
 	//Head Node will not be adjusted
 	if (Node->prev == NULL && Head == Node)
 		return;
@@ -67,6 +70,7 @@ void Adjust(List Node) {
 	Head->prev = Node;
 	Node->prev = NULL;
 	Head = Node;
+	Node->usedTime = 0;
 }
 
 bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
@@ -86,10 +90,7 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 				indirect->bytes = 0;
 				indirect->usedTime++;
 				if (indirect->usedTime > maxTimes) {
-					//Double the time, making it fixed at the top node
-					maxTimes = indirect->usedTime * 2;
 					Adjust(indirect);
-					indirect->usedTime = 0;
 					//printf("%d is the Head Node\n", Head->Key);
 				}
 				return rate;
