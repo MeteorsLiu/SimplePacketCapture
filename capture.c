@@ -53,13 +53,10 @@ void Insert(uint32_t Key, bpf_u_int32 bytes) {
 	Last = indirect;
 }
 
+
 void Adjust(List Node) {
 	//Double the time, making it fixed at the top node
-	//And prevent the head node call this function too many times
 	maxTimes = Node->usedTime * 2;
-	//Head Node will not be adjusted
-	if (Node->prev == NULL && Head == Node)
-		return;
 	//printf("%d Adjust to be Top!\n", Node->Key);
 	//Make it be first
 	//First connected the previous node with the next node
@@ -89,7 +86,11 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 				rate = indirect->bytes;
 				indirect->bytes = 0;
 				indirect->usedTime++;
-				if (indirect->usedTime > maxTimes) {
+				//Compare the maxTimes
+				//And Head Node will not be adjusted
+				if (indirect->usedTime > maxTimes 
+					&& indirect->prev != NULL 
+					&& Head != indirect) {
 					Adjust(indirect);
 					//printf("%d is the Head Node\n", Head->Key);
 				}
