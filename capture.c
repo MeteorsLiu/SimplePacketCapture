@@ -55,8 +55,7 @@ void Insert(uint32_t Key, bpf_u_int32 bytes) {
 
 
 void Adjust(List Node) {
-	//Double the time, making it fixed at the top node
-	maxTimes = Node->usedTime * 2;
+	maxTimes = Node->usedTime;
 	//printf("%d Adjust to be Top!\n", Node->Key);
 	//Make it be first
 	//First connected the previous node with the next node
