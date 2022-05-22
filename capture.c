@@ -61,6 +61,8 @@ void Adjust(List Node) {
 	//printf("%d Adjust to be Top!\n", Node->Key);
 	//Make it be first
 	//First connected the previous node with the next node
+	if (Last == Node)
+		Last = Node->prev;
 	Node->prev->next = Node->next;
 	//Update the new next ptr
 	Node->next = Head;
@@ -83,6 +85,8 @@ void RecycleLinkedList() {
 		if (nowTime - indirect->record >= 3*HOUR) {
 			if (indirect->prev)
 				indirect->prev->next = indirect->next;
+			if (Last == indirect)
+				Last = indirect->prev;
 			tmp = indirect;
 			indirect = indirect->next;
 			free(tmp);
