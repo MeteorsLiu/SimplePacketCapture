@@ -89,6 +89,7 @@ void RecycleLinkedList() {
 			indirect = indirect->next;
 		}	
 	}
+	lastRecycleTime = nowTime;
 }
 bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 	List indirect = Head;
@@ -138,6 +139,7 @@ void Free() {
 		indirect = tmp;
 	}
 	Head = Last = NULL;
+	lastRecycleTime = maxTimes = 0;
 }
 void stop_capture(int o) {
 	printf("Exit\n");
