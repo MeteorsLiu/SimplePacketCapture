@@ -77,16 +77,18 @@ void RecycleLinkedList() {
 		return;
 	List indirect = Head;
 	List tmp = NULL;
-	do {
-		if (Head == indirect || indirect->prev == NULL)
-			continue;
+	while (indirect) {
+		//Free the inactive resource
 		if (nowTime - indirect->record >= 3*HOUR) {
-			indirect->prev->next = indirect->next;
+			if (indirect->prev)
+				indirect->prev->next = indirect->next;
 			tmp = indirect;
 			indirect = indirect->next;
 			free(tmp);
-		}
-	} while (indirect = indirect->next);
+		} else {
+			indirect = indirect->next;
+		}	
+	}
 	lastRecycleTime = nowTime;
 }
 bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
