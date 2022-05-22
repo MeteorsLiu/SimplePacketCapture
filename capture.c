@@ -123,8 +123,8 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 					//printf("%d is the Head Node\n", Head->Key);
 				}
 				return rate;
-			} else if (diff >= 2*SECOND) {
-				//invalid
+			} else if (diff > SECOND || diff < 0) {
+				//invalid/impossible
 				//so reset the counter
 				indirect->record = record;
 				indirect->bytes = bytes;
