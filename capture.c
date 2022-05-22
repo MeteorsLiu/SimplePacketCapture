@@ -80,7 +80,7 @@ void RecycleLinkedList() {
 	do {
 		if (Head == indirect || indirect->prev == NULL)
 			continue;
-		if (nowTime - lastRecycleTime >= 4*HOUR) {
+		if (nowTime - indirect->record >= 3*HOUR) {
 			indirect->prev->next = indirect->next;
 			tmp = indirect;
 			indirect = indirect->next;
