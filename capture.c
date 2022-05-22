@@ -79,7 +79,7 @@ void RecycleLinkedList() {
 	List tmp = NULL;
 	do {
 		if (Head == indirect || indirect->prev == NULL)
-			continue
+			continue;
 		indirect->prev->next = indirect->next;
 		tmp = indirect;
 		indirect = indirect->next;
