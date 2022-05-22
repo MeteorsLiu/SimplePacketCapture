@@ -101,12 +101,14 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 	bpf_u_int32 rate = 0;
 	int flag = 0;
 	time_t record;
+	time_t diff;
 	while (indirect) {
 		//Matched !
 		if (indirect->Key == Key) {
 			flag = 1;
 			record = time(NULL);
-			if (record - indirect->record >= SECOND) {
+			diff = record - indirect->record;
+			if (diff == SECOND) {
 				//Reset Counter
 				indirect->record = record;
 				rate = indirect->bytes;
@@ -121,10 +123,15 @@ bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 					//printf("%d is the Head Node\n", Head->Key);
 				}
 				return rate;
+			} else if (diff >= 2*SECOND) {
+				//invalid
+				//so reset the counter
+				indirect->record = record;
+				indirect->bytes = bytes;
 			} else {
 				indirect->bytes += bytes;
-				break;
 			}
+			break;
 		}
 		indirect = indirect->next;
 	}
