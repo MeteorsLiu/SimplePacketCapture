@@ -75,7 +75,8 @@ void RecycleLinkedList() {
 	time_t nowTime = time(NULL);
 	if (nowTime - lastRecycleTime < 4*HOUR)
 		return;
-	List indirect = Head;
+	//Don't recycle the head ptr
+	List indirect = Head->next;
 	List tmp = NULL;
 	while (indirect) {
 		//Free the inactive resource
