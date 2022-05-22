@@ -25,10 +25,12 @@ static pcap_t *p = NULL;
 static List Head = NULL;
 static List Last = NULL;
 static uint32_t maxTimes = 0;
+static time_t lastRecycleTime = 0;
 
 //Macro
 #define ERROR -1
 #define SECOND 1
+#define HOUR   3600
 #define MiB    131072
 #define KiB	   128
 
@@ -69,6 +71,25 @@ void Adjust(List Node) {
 	Node->usedTime = 0;
 }
 
+void RecycleLinkedList() {
+	time_t nowTime = time(NULL);
+	if (nowTime - lastRecycleTime < 4*HOUR)
+		return;
+	List indirect = Head;
+	List tmp = NULL;
+	while (indirect) {
+		//Free the inactive resource
+		if (nowTime - indirect->record >= 3*HOUR) {
+			if (indirect->prev)
+				indirect->prev->next = indirect->next;
+			tmp = indirect;
+			indirect = indirect->next;
+			free(tmp);
+		} else {
+			indirect = indirect->next;
+		}	
+	}
+}
 bpf_u_int32 Update(uint32_t Key, bpf_u_int32 bytes) {
 	List indirect = Head;
 	bpf_u_int32 rate = 0;
@@ -197,7 +218,7 @@ void packetHandler(
     			rate /= KiB;
     			printf("record:  %s  %luKbps\n", inet_ntoa(ip_header->ip_src), rate);
     		}
-    		
+    		RecycleLinkedList(); 
     	}
     	//printf("ip len : %d\n", ip_header->ip_len);
     }
@@ -215,7 +236,8 @@ int main(int argc, char const *argv[])
     signal(SIGINT, stop_capture);
     signal(SIGTERM, stop_capture);
     signal(SIGQUIT, stop_capture);
-
+    // Initialize the first recycle time.
+    lastRecycleTime = time(NULL);
     // Start Loop
     pcap_loop(p, 0, packetHandler, NULL);
 
